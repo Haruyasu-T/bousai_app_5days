@@ -1,23 +1,161 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>避難所登録</h2>
-<p>新しい避難所情報を登録します。</p>
+<style>
+  .register-page {
+    width: min(1120px, calc(100% - 32px));
+    margin: 34px auto 70px;
+  }
 
-<!-- 成功・エラーメッセージ表示 -->
-{% if success %}
-  <p>{{ message }}</p>
-{% endif %}
+  .register-card {
+    padding: 31px 34px 36px;
+    border: 1px solid #f0f3f7;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 8px 25px rgba(37, 70, 111, .08);
+  }
 
-{% if error %}
-  <p>{{ message }}</p>
-{% endif %}
+  .register-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 28px;
+    color: var(--blue);
+    font-size: 24px;
+    font-weight: 800;
+  }
 
-<form method="POST">
-  <p>
-    <label for="name">避難所名（必須）</label><br>
-    <input type="text" id="name" name="name">
-  </p>
-  <p><button type="submit">登録</button></p>
-</form>
+  .register-heading svg { width: 25px; height: 25px; }
+
+  .status {
+    margin: -10px 0 24px;
+    padding: 12px 15px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .status.success { color: #17733a; background: #e9f8ee; }
+  .status.error { color: #b73b3b; background: #fff0f0; }
+
+  .register-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px 34px; }
+  .form-column { display: grid; align-content: start; gap: 19px; }
+  .field { display: grid; gap: 7px; }
+  .field label, .fieldset-label { color: var(--ink); font-size: 14px; font-weight: 700; }
+  .required { color: #d44a4a; font-size: 12px; }
+  input, select, textarea {
+    width: 100%;
+    border: 1px solid #ced8e4;
+    border-radius: 8px;
+    padding: 11px 13px;
+    color: var(--ink);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+  }
+  input:focus, select:focus, textarea:focus { outline: 3px solid rgba(32, 86, 173, .14); border-color: var(--blue); }
+  textarea { min-height: 92px; resize: vertical; }
+  input::placeholder, textarea::placeholder { color: #9ba8b7; }
+  .hint { color: var(--muted); font-size: 12px; }
+  .check-field, .radio-field { display: grid; gap: 10px; }
+  .choice { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 14px; }
+  .choice input { width: auto; accent-color: var(--blue); }
+  .confirm-box { padding: 15px; border-radius: 10px; background: var(--blue-soft); }
+  .confirm-box .choice { font-weight: 700; }
+  .form-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 18px; padding-top: 5px; border-top: 1px solid var(--line); }
+  .submit-button { min-width: 150px; border: 0; border-radius: 9px; padding: 12px 24px; color: #fff; background: var(--blue); font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 5px 12px rgba(32, 86, 173, .2); }
+  .submit-button:hover { background: var(--blue-dark); }
+
+  @media (max-width: 800px) {
+    .register-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-actions { grid-column: 1 / -1; }
+  }
+  @media (max-width: 560px) {
+    .register-page { width: calc(100% - 20px); margin-top: 20px; }
+    .register-card { padding: 22px 16px 25px; border-radius: 14px; }
+    .register-heading { margin-bottom: 22px; font-size: 20px; }
+    .register-form { grid-template-columns: 1fr; gap: 18px; }
+    .form-actions { align-items: stretch; flex-direction: column; }
+    .submit-button { width: 100%; }
+  }
+</style>
+
+{% set values = form if form is defined else {} %}
+<div class="register-page">
+  <section class="register-card">
+    <h2 class="register-heading">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/></svg>
+      避難所情報登録
+    </h2>
+
+    {% if success or error %}<p class="status {{ 'success' if success else 'error' }}" role="alert">{{ message }}</p>{% endif %}
+
+    <form class="register-form" method="POST">
+      <div class="form-column">
+        <div class="field">
+          <label for="facility_type">施設区分</label>
+          <select id="facility_type" name="facility_type">
+            <option value="">施設区分を選択</option>
+            <option value="指定避難所" {% if values.get('facility_type') == '指定避難所' %}selected{% endif %}>指定避難所</option>
+            <option value="一時避難所" {% if values.get('facility_type') == '一時避難所' %}selected{% endif %}>一時避難所</option>
+            <option value="福祉避難所" {% if values.get('facility_type') == '福祉避難所' %}selected{% endif %}>福祉避難所</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="name">施設名 <span class="required">必須</span></label>
+          <input type="text" id="name" name="name" value="{{ values.get('name', '') }}" placeholder="施設名を入力" required>
+        </div>
+        <div class="field">
+          <label for="name_roman">施設名（ローマ字） <span class="required">必須</span></label>
+                    <input type="text" id="name_roman" name="name_roman" value="{{ values.get('name_roman', '') }}" placeholder="英語表記" required>
+        </div>
+        <div class="field">
+          <label for="accepted_count">現在の受入れ人数</label>
+          <input type="number" id="accepted_count" name="accepted_count" value="{{ values.get('accepted_count', '') }}" min="0" placeholder="自由入力">
+        </div>
+        <div class="field">
+          <label for="check_time">情報確認日時</label>
+          <input type="datetime-local" id="check_time" name="check_time" value="{{ values.get('check_time', '') }}">
+        </div>
+      </div>
+
+      <div class="form-column">
+        <div class="field">
+          <label for="capacity">避難可能人数（収容） <span class="required">必須</span></label>
+                    <input type="number" id="capacity" name="capacity" value="{{ values.get('capacity', '') }}" min="0" placeholder="自由入力" required>
+        </div>
+        <div class="field">
+          <label for="stock_count">備蓄食料人数</label>
+          <input type="number" id="stock_count" name="stock_count" value="{{ values.get('stock_count', '') }}" min="0" placeholder="自由入力">
+        </div>
+        <div class="field">
+          <label for="address">施設住所 <span class="required">必須</span></label>
+                    <textarea id="address" name="address" placeholder="住所を入力" required>{{ values.get('address', '') }}</textarea>
+          <span class="hint">地図表示にも使用します</span>
+        </div>
+        <div class="field">
+          <label for="address_english">施設住所（英語表記）</label>
+          <input type="text" id="address_english" name="address_english" value="{{ values.get('address_english', '') }}" placeholder="英語表記">
+        </div>
+      </div>
+
+      <div class="form-column">
+        <fieldset class="radio-field" style="border:0;padding:0;margin:0;">
+          <legend class="fieldset-label">災害対応区分 <span class="required">必須</span></legend>
+                    <label class="choice"><input type="radio" name="disaster_type" value="津波" {% if values.get('disaster_type') == '津波' %}checked{% endif %} required>津波</label>
+                    <label class="choice"><input type="radio" name="disaster_type" value="地震" {% if values.get('disaster_type') == '地震' %}checked{% endif %}>地震</label>
+                    <label class="choice"><input type="radio" name="disaster_type" value="洪水" {% if values.get('disaster_type') == '洪水' %}checked{% endif %}>洪水</label>
+        </fieldset>
+        {% if error and '重複' in message %}<p class="status error">{{ message }}</p>{% endif %}
+        <div class="confirm-box">
+          <label class="choice"><input type="checkbox" name="confirm" required> 内容を確認しました</label>
+        </div>
+        <div class="form-actions">
+          <span class="hint">必須項目を入力して登録してください</span>
+          <button class="submit-button" type="submit">登録する</button>
+        </div>
+      </div>
+    </form>
+  </section>
+</div>
 {% endblock %}

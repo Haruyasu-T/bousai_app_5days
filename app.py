@@ -293,7 +293,8 @@ def shelter_register():
             return render_template(
                 'shelter_register.html',
                 error=True,
-                message='避難所名を入力してください。'
+                message='避難所名を入力してください。',
+                form=request.form
             )
 
         shelter_ids = [
@@ -301,7 +302,19 @@ def shelter_register():
             if isinstance(shelter, dict) and isinstance(shelter.get('id', 0), int)
         ]
         new_id = max(shelter_ids, default=0) + 1
-        shelters.append({'id': new_id, 'name': name})
+        shelters.append({
+            'id': new_id,
+            'name': name,
+            'name_roman': request.form.get('name_roman', '').strip(),
+            'facility_type': request.form.get('facility_type', '').strip(),
+            'capacity': request.form.get('capacity', '').strip(),
+            'accepted_count': request.form.get('accepted_count', '').strip(),
+            'stock_count': request.form.get('stock_count', '').strip(),
+            'address': request.form.get('address', '').strip(),
+            'address_english': request.form.get('address_english', '').strip(),
+            'disaster_type': request.form.get('disaster_type', '').strip(),
+            'check_time': request.form.get('check_time', '').strip(),
+        })
 
         try:
             save_shelters()
@@ -316,7 +329,8 @@ def shelter_register():
         return render_template(
             'shelter_register.html',
             success=True,
-            message='避難所を登録しました。'
+            message='避難所を登録しました。',
+            form={}
         )
 
     return render_template('shelter_register.html')
