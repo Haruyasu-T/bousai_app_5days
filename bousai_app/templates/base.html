@@ -4,27 +4,135 @@
   <meta charset="utf-8">
   <title>{% block title %}防災アプリ{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue: #2056ad;
+      --blue-dark: #194b9c;
+      --blue-soft: #edf4ff;
+      --green: #21a64a;
+      --ink: #24364b;
+      --muted: #6c7b8c;
+      --line: #e8edf3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f8fafc;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+
+    .app-header {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(24px, calc((100% - 1380px) / 2));
+      color: white;
+      background: linear-gradient(105deg, #2b60b4, var(--blue-dark));
+      box-shadow: 0 2px 12px rgba(23, 62, 123, .18);
+    }
+
+    .brand {
+      color: white;
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-decoration: none;
+    }
+
+    .menu-toggle {
+      position: relative;
+      z-index: 2;
+      width: 42px;
+      height: 42px;
+      border: 0;
+      color: white;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .menu-toggle::before,
+    .menu-toggle::after,
+    .menu-toggle span {
+      content: "";
+      position: absolute;
+      left: 10px;
+      width: 23px;
+      height: 3px;
+      border-radius: 3px;
+      background: currentColor;
+    }
+
+    .menu-toggle::before { top: 12px; }
+    .menu-toggle span { top: 19px; }
+    .menu-toggle::after { top: 26px; }
+
+    .site-nav {
+      position: absolute;
+      top: 70px;
+      right: max(24px, calc((100% - 1380px) / 2));
+      z-index: 10;
+      display: none;
+      min-width: 220px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 10px 28px rgba(24, 52, 86, .16);
+    }
+
+    .site-nav.is-open { display: grid; }
+
+    .site-nav a,
+    .site-nav span {
+      display: block;
+      padding: 10px 12px;
+      color: var(--ink);
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .site-nav a:hover { color: var(--blue); background: var(--blue-soft); }
+    .site-nav span { color: var(--muted); border-top: 1px solid var(--line); }
+
+    main { min-height: calc(100vh - 70px); }
+  </style>
 </head>
 <body>
-  <!-- ヘッダー -->
-  <h1>防災アプリ</h1>
+  <header class="app-header">
+    <a class="brand" href="/">防災アプリ</a>
+    <button class="menu-toggle" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="siteNav"><span></span></button>
+    <nav id="siteNav" class="site-nav">
+      <a href="/">ホーム</a>
+      <a href="/shelter_search">避難所検索</a>
+      <a href="/shelter_register">避難所登録</a>
+      <a href="/board">指示・発信ボード</a>
+      {% if session.logged_in %}
+        <span>ログイン中{% if session.username %}（{{ session.username }}）{% endif %}</span>
+        <a href="/logout">ログアウト</a>
+      {% else %}
+        <span>未ログイン</span>
+        <a href="/login">ログイン</a>
+      {% endif %}
+    </nav>
+  </header>
 
-  <!-- ナビゲーション -->
-  <nav>
-    <a href="/">ホーム</a> |
-    <a href="/shelter_search">避難所検索</a> |
-    <a href="/shelter_register">避難所登録</a> |
-    <a href="/board">指示・発信ボード</a>
-    ｜
-    {% if session.logged_in %}
-      ログイン中{% if session.username %}（{{ session.username }}）{% endif %}
-      <a href="/logout">ログアウト</a>
-    {% else %}
-      未ログイン
-      <a href="/login">ログイン</a>
-    {% endif %}
-  </nav>
-  <hr>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggle = document.querySelector('.menu-toggle');
+      const nav = document.getElementById('siteNav');
+      toggle.addEventListener('click', function() {
+        const isOpen = nav.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', isOpen);
+      });
+    });
+  </script>
 
   <main>
     <!-- ここに子テンプレートの content が入る -->
