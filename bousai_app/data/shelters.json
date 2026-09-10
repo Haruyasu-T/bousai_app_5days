@@ -34,5 +34,20 @@
       "洪水"
     ],
     "check_time": ""
+  },
+  {
+    "id": 9,
+    "name": "あ",
+    "name_roman": "あ",
+    "facility_type": "",
+    "capacity": "1",
+    "accepted_count": "",
+    "stock_count": "",
+    "address": "あ",
+    "address_english": "",
+    "disaster_type": [
+      "洪水"
+    ],
+    "check_time": ""
   }
 ]
