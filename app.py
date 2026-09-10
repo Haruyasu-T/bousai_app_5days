@@ -289,11 +289,35 @@ def logout():
 def shelter_register():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
+        address = request.form.get('address', '').strip()
+        disaster_types = request.form.getlist('disaster_type')
         if not name:
             return render_template(
                 'shelter_register.html',
                 error=True,
                 message='避難所名を入力してください。',
+                form=request.form
+            )
+        if not disaster_types:
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='災害対応区分を1つ以上選択してください。',
+                form=request.form
+            )
+
+        duplicate_exists = any(
+            isinstance(shelter, dict) and (
+                shelter.get('name', '').strip() == name or
+                (address and shelter.get('address', '').strip() == address)
+            )
+            for shelter in shelters
+        )
+        if duplicate_exists:
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='施設名または住所が重複しています。既に登録されている情報を確認してください。',
                 form=request.form
             )
 
@@ -310,9 +334,9 @@ def shelter_register():
             'capacity': request.form.get('capacity', '').strip(),
             'accepted_count': request.form.get('accepted_count', '').strip(),
             'stock_count': request.form.get('stock_count', '').strip(),
-            'address': request.form.get('address', '').strip(),
+            'address': address,
             'address_english': request.form.get('address_english', '').strip(),
-            'disaster_type': request.form.get('disaster_type', '').strip(),
+            'disaster_type': disaster_types,
             'check_time': request.form.get('check_time', '').strip(),
         })
 

@@ -18,5 +18,21 @@
   {
     "id": 7,
     "name": "あああ"
+  },
+  {
+    "id": 8,
+    "name": "区分テスト施設",
+    "name_roman": "",
+    "facility_type": "",
+    "capacity": "",
+    "accepted_count": "",
+    "stock_count": "",
+    "address": "",
+    "address_english": "",
+    "disaster_type": [
+      "津波",
+      "洪水"
+    ],
+    "check_time": ""
   }
 ]

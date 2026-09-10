@@ -27,6 +27,18 @@
       font-family: "Noto Sans JP", sans-serif;
     }
 
+    body.large-text { zoom: 1.1; }
+    body.high-contrast {
+      --blue: #003b7a;
+      --blue-dark: #002b5c;
+      --blue-soft: #e5f0ff;
+      --ink: #111;
+      --muted: #3f4b59;
+      --line: #8b98a8;
+      background: #fff;
+    }
+    body.high-contrast .app-header { background: #002b5c; }
+
     .app-header {
       height: 70px;
       display: flex;
@@ -46,6 +58,55 @@
       text-decoration: none;
     }
 
+    .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .display-control { position: relative; }
+    .header-action,
+    .logout-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      border: 1px solid rgba(255, 255, 255, .55);
+      border-radius: 7px;
+      padding: 7px 10px;
+      color: white;
+      background: rgba(255, 255, 255, .1);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .header-action:hover,
+    .logout-link:hover { background: rgba(255, 255, 255, .22); }
+    .display-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 20;
+      display: grid;
+      min-width: 220px;
+      gap: 4px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: white;
+      box-shadow: 0 10px 28px rgba(24, 52, 86, .18);
+    }
+    .display-menu[hidden] { display: none; }
+    .display-option {
+      border: 0;
+      border-radius: 6px;
+      padding: 9px 11px;
+      color: var(--ink);
+      background: white;
+      font: inherit;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .display-option:hover,
+    .display-option.is-selected { color: var(--blue); background: var(--blue-soft); font-weight: 700; }
+
     .menu-toggle {
       position: relative;
       z-index: 2;
@@ -55,6 +116,7 @@
       color: white;
       background: transparent;
       cursor: pointer;
+      margin-left: 8px;
     }
 
     .menu-toggle::before,
@@ -107,6 +169,21 @@
 <body>
   <header class="app-header">
     <a class="brand" href="/">防災アプリ</a>
+    <div class="header-actions">
+      <button class="header-action" type="button" id="language-toggle" aria-label="言語を切り替える">日本語 / English</button>
+      <div class="display-control">
+        <button class="header-action" type="button" id="display-toggle" aria-label="文字サイズと配色を選択する" aria-expanded="false" aria-controls="display-menu">文字・配色</button>
+        <div class="display-menu" id="display-menu" hidden>
+          <button class="display-option" type="button" data-display-mode="">標準</button>
+          <button class="display-option" type="button" data-display-mode="large-text">大きめ文字</button>
+          <button class="display-option" type="button" data-display-mode="high-contrast">高コントラスト</button>
+          <button class="display-option" type="button" data-display-mode="large-text high-contrast">大きめ文字＋高コントラスト</button>
+        </div>
+      </div>
+      {% if session.logged_in %}
+        <a class="logout-link" href="/logout">ログアウト</a>
+      {% endif %}
+    </div>
     <button class="menu-toggle" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="siteNav"><span></span></button>
     <nav id="siteNav" class="site-nav">
       <a href="/">ホーム</a>
@@ -127,10 +204,167 @@
     document.addEventListener('DOMContentLoaded', function() {
       const toggle = document.querySelector('.menu-toggle');
       const nav = document.getElementById('siteNav');
+      const languageToggle = document.getElementById('language-toggle');
+      const displayToggle = document.getElementById('display-toggle');
+      const displayMenu = document.getElementById('display-menu');
+      const displayOptions = document.querySelectorAll('.display-option');
+      const languageTexts = {
+        '防災アプリ': 'Disaster Prevention App',
+        '文字・配色': 'Text / Colors',
+        '標準': 'Standard',
+        '大きめ文字': 'Larger Text',
+        '高コントラスト': 'High Contrast',
+        '大きめ文字＋高コントラスト': 'Larger Text + High Contrast',
+        'ホーム': 'Home',
+        '避難所検索': 'Shelter Search',
+        '避難所登録': 'Register Facility',
+        '指示・発信ボード': 'Emergency Board',
+        'ログイン中': 'Logged in',
+        '未ログイン': 'Not logged in',
+        'ログイン': 'Log in',
+        'ログアウト': 'Log out',
+        '管理者ログイン': 'Administrator Login',
+        '指示ボード・避難所登録の利用には管理者権限が必要です。': 'Administrator access is required to use the emergency board and facility registration.',
+        'パスワード（「123」と入力してください）': 'Password (enter "123")',
+        '発信ボード': 'Emergency Board',
+        '住民向けの発信を登録・確認できます。': 'Register and review announcements for residents.',
+        '発信一覧': 'Announcements',
+        '内容': 'Content',
+        '登録されている指示はありません。': 'There are no registered announcements.',
+        '避難所検索': 'Shelter Search',
+        '登録されている避難所を確認できます。': 'Review registered facilities.',
+        '全施設一覧': 'All Facilities',
+        '検索結果': 'Search Results',
+        '該当する避難所が見つかりませんでした': 'No matching facilities were found.',
+        '検索画面に戻る': 'Back to Search',
+        'トップページへ戻る': 'Back to Home',
+        '避難所情報登録': 'Register Facility Information',
+        '施設区分': 'Facility Type',
+        '施設区分を選択': 'Select a facility type',
+        '指定避難所': 'Designated Shelter',
+        '一時避難所': 'Temporary Shelter',
+        '福祉避難所': 'Welfare Shelter',
+        '防災倉庫': 'Disaster Supply Warehouse',
+        '物資集積所': 'Supply Collection Point',
+        'その他': 'Other',
+        '施設名': 'Facility Name',
+        '施設名（ローマ字）': 'Facility Name (Romanized)',
+        '現在の受入れ人数': 'Current Occupancy',
+        '情報確認日時': 'Information Checked At',
+        '現在時刻': 'Now',
+        '避難可能人数（収容）': 'Capacity',
+        '備蓄食料人数': 'Stored Food Capacity',
+        '施設住所': 'Facility Address',
+        '地図表示にも使用します': 'Also used for map display',
+        '施設住所（英語表記）': 'Facility Address (English)',
+        '災害対応区分': 'Disaster Type',
+        '津波': 'Tsunami',
+        '地震': 'Earthquake',
+        '洪水': 'Flood',
+        '内容を確認しました': 'I have reviewed the information',
+        '必須項目を入力して登録してください': 'Complete the required fields to register.',
+        '登録する': 'Register',
+        '警報・注意報': 'Warnings and Advisories',
+        '現在、警報・注意報は発表されていません': 'There are currently no warnings or advisories.',
+        'データ取得:': 'Data retrieved:',
+        '気象庁発表:': 'JMA report:',
+        '読み込み中...': 'Loading...',
+        '気象情報の取得に失敗しました': 'Failed to retrieve weather information',
+        'ログアウト': 'Log out'
+      };
+      const originalText = new WeakMap();
+      const originalAttributes = new WeakMap();
+
+      function translatePage(language) {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        let node;
+        while ((node = walker.nextNode())) {
+          if (!node.parentElement.matches('script, style')) textNodes.push(node);
+        }
+        textNodes.forEach(function(textNode) {
+          if (!originalText.has(textNode)) originalText.set(textNode, textNode.nodeValue);
+          const source = originalText.get(textNode);
+          if (language === 'en') {
+            textNode.nodeValue = Object.keys(languageTexts)
+              .sort(function(first, second) { return second.length - first.length; })
+              .reduce(function(text, japanese) {
+                return text.split(japanese).join(languageTexts[japanese]);
+              }, source);
+          } else {
+            textNode.nodeValue = source;
+          }
+        });
+
+        document.querySelectorAll('input, textarea, button, [aria-label]').forEach(function(element) {
+          if (!originalAttributes.has(element)) {
+            originalAttributes.set(element, {
+              placeholder: element.getAttribute('placeholder'),
+              ariaLabel: element.getAttribute('aria-label')
+            });
+          }
+          const attributes = originalAttributes.get(element);
+          if (language === 'en') {
+            if (attributes.placeholder === '施設名を入力') element.placeholder = 'Enter facility name';
+            if (attributes.placeholder === '英語表記') element.placeholder = 'English name';
+            if (attributes.placeholder === '住所を入力') element.placeholder = 'Enter address';
+            if (attributes.ariaLabel === 'メニューを開く') element.setAttribute('aria-label', 'Open menu');
+          } else {
+            if (attributes.placeholder !== null) element.placeholder = attributes.placeholder;
+            if (attributes.ariaLabel !== null) element.setAttribute('aria-label', attributes.ariaLabel);
+          }
+        });
+      }
+
       toggle.addEventListener('click', function() {
         const isOpen = nav.classList.toggle('is-open');
         toggle.setAttribute('aria-expanded', isOpen);
       });
+
+      languageToggle.addEventListener('click', function() {
+        const isEnglish = document.documentElement.lang === 'en';
+        document.documentElement.lang = isEnglish ? 'ja' : 'en';
+        localStorage.setItem('bousai-language', isEnglish ? 'ja' : 'en');
+        translatePage(isEnglish ? 'ja' : 'en');
+        languageToggle.textContent = isEnglish ? '日本語 / English' : 'English / 日本語';
+      });
+
+      let displayMode = localStorage.getItem('bousai-display-mode') || '';
+      function setDisplayMode(mode) {
+        displayMode = mode;
+        document.body.className = displayMode;
+        localStorage.setItem('bousai-display-mode', displayMode);
+        displayOptions.forEach(function(option) {
+          option.classList.toggle('is-selected', option.dataset.displayMode === displayMode);
+          option.setAttribute('aria-checked', option.dataset.displayMode === displayMode);
+        });
+      }
+
+      setDisplayMode(displayMode);
+      displayToggle.addEventListener('click', function() {
+        const isOpen = !displayMenu.hidden;
+        displayMenu.hidden = isOpen;
+        displayToggle.setAttribute('aria-expanded', !isOpen);
+      });
+      displayOptions.forEach(function(option) {
+        option.addEventListener('click', function() {
+          setDisplayMode(option.dataset.displayMode);
+          displayMenu.hidden = true;
+          displayToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+      document.addEventListener('click', function(event) {
+        if (!event.target.closest('.display-control')) {
+          displayMenu.hidden = true;
+          displayToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      if (localStorage.getItem('bousai-language') === 'en') {
+        document.documentElement.lang = 'en';
+        languageToggle.textContent = 'English / 日本語';
+        translatePage('en');
+      }
     });
   </script>
 

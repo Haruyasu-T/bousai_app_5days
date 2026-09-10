@@ -41,6 +41,10 @@
   .register-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px 34px; }
   .form-column { display: grid; align-content: start; gap: 19px; }
   .field { display: grid; gap: 7px; }
+  .datetime-control { display: flex; gap: 8px; }
+  .datetime-control input { min-width: 0; }
+  .now-button { flex: 0 0 auto; border: 1px solid #ced8e4; border-radius: 8px; padding: 0 12px; color: var(--blue); background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .now-button:hover { background: var(--blue-soft); }
   .field label, .fieldset-label { color: var(--ink); font-size: 14px; font-weight: 700; }
   .required { color: #d44a4a; font-size: 12px; }
   input, select, textarea {
@@ -99,6 +103,9 @@
             <option value="指定避難所" {% if values.get('facility_type') == '指定避難所' %}selected{% endif %}>指定避難所</option>
             <option value="一時避難所" {% if values.get('facility_type') == '一時避難所' %}selected{% endif %}>一時避難所</option>
             <option value="福祉避難所" {% if values.get('facility_type') == '福祉避難所' %}selected{% endif %}>福祉避難所</option>
+            <option value="防災倉庫" {% if values.get('facility_type') == '防災倉庫' %}selected{% endif %}>防災倉庫</option>
+            <option value="物資集積所" {% if values.get('facility_type') == '物資集積所' %}selected{% endif %}>物資集積所</option>
+            <option value="その他" {% if values.get('facility_type') == 'その他' %}selected{% endif %}>その他</option>
           </select>
         </div>
         <div class="field">
@@ -115,7 +122,10 @@
         </div>
         <div class="field">
           <label for="check_time">情報確認日時</label>
-          <input type="datetime-local" id="check_time" name="check_time" value="{{ values.get('check_time', '') }}">
+          <div class="datetime-control">
+            <input type="datetime-local" id="check_time" name="check_time" value="{{ values.get('check_time', '') }}">
+            <button class="now-button" type="button" id="set-current-time">現在時刻</button>
+          </div>
         </div>
       </div>
 
@@ -140,13 +150,14 @@
       </div>
 
       <div class="form-column">
+        {% set selected_disaster_types = values.getlist('disaster_type') if values.getlist is defined else ([values.get('disaster_type')] if values.get('disaster_type') else []) %}
         <fieldset class="radio-field" style="border:0;padding:0;margin:0;">
           <legend class="fieldset-label">災害対応区分 <span class="required">必須</span></legend>
-                    <label class="choice"><input type="radio" name="disaster_type" value="津波" {% if values.get('disaster_type') == '津波' %}checked{% endif %} required>津波</label>
-                    <label class="choice"><input type="radio" name="disaster_type" value="地震" {% if values.get('disaster_type') == '地震' %}checked{% endif %}>地震</label>
-                    <label class="choice"><input type="radio" name="disaster_type" value="洪水" {% if values.get('disaster_type') == '洪水' %}checked{% endif %}>洪水</label>
+                    <label class="choice"><input type="checkbox" name="disaster_type" value="津波" {% if '津波' in selected_disaster_types %}checked{% endif %}>津波</label>
+                    <label class="choice"><input type="checkbox" name="disaster_type" value="地震" {% if '地震' in selected_disaster_types %}checked{% endif %}>地震</label>
+                    <label class="choice"><input type="checkbox" name="disaster_type" value="洪水" {% if '洪水' in selected_disaster_types %}checked{% endif %}>洪水</label>
         </fieldset>
-        {% if error and '重複' in message %}<p class="status error">{{ message }}</p>{% endif %}
+        {% if error %}<p class="status error">{{ message }}</p>{% endif %}
         <div class="confirm-box">
           <label class="choice"><input type="checkbox" name="confirm" required> 内容を確認しました</label>
         </div>
@@ -158,4 +169,13 @@
     </form>
   </section>
 </div>
+<script>
+  document.getElementById('set-current-time').addEventListener('click', function () {
+    const now = new Date();
+    const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+    document.getElementById('check_time').value = localTime;
+  });
+</script>
 {% endblock %}
